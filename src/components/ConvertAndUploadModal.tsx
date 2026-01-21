@@ -56,7 +56,6 @@ export function ConvertAndUploadModal({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.match(/^image\//)) {
       toast.error("Please select a valid image file");
       return;
@@ -64,7 +63,6 @@ export function ConvertAndUploadModal({
 
     setImageFile(file);
 
-    // Create preview
     const reader = new FileReader();
     reader.onload = (event) => {
       setPreview(event.target?.result as string);
@@ -73,7 +71,9 @@ export function ConvertAndUploadModal({
   };
 
   const handleConvert = async () => {
-    if (!word.trim()) {
+    const cleanWord = word.trim(); // ✅ FIX (CRITICAL)
+
+    if (!cleanWord) {
       toast.error("Please enter a word");
       return;
     }
@@ -85,8 +85,9 @@ export function ConvertAndUploadModal({
 
     try {
       setIsConverting(true);
+
       const converted = await convertToJsonFormat(
-        word,
+        cleanWord,          // ✅ always trimmed
         imageFile,
         conversionOptions
       );
@@ -94,7 +95,6 @@ export function ConvertAndUploadModal({
       setConvertedImages([...convertedImages, converted]);
       toast.success("Image converted successfully!");
 
-      // Reset form
       setWord("");
       setImageFile(null);
       setPreview("");
@@ -124,7 +124,7 @@ export function ConvertAndUploadModal({
       const jsonContent = createJsonFile(convertedImages);
       downloadJsonFile(jsonContent, "images.json");
       toast.success("JSON file downloaded!");
-    } catch (error) {
+    } catch {
       toast.error("Failed to download JSON file");
     }
   };
@@ -170,13 +170,11 @@ export function ConvertAndUploadModal({
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Input Section */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Add Image</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Word Input */}
               <div>
                 <Label htmlFor="convert-word-input">Word</Label>
                 <Input
@@ -190,7 +188,6 @@ export function ConvertAndUploadModal({
                 />
               </div>
 
-              {/* Image Upload */}
               <div>
                 <Label htmlFor="convert-image-input">Image</Label>
                 <input
@@ -212,7 +209,6 @@ export function ConvertAndUploadModal({
                 </Button>
               </div>
 
-              {/* Image Preview */}
               {preview && (
                 <div className="w-32 h-32 rounded border overflow-hidden bg-muted">
                   <img
@@ -223,19 +219,19 @@ export function ConvertAndUploadModal({
                 </div>
               )}
 
-              {/* Convert Button */}
               <Button
                 onClick={handleConvert}
                 disabled={isConverting}
                 className="w-full"
               >
-                {isConverting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isConverting && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
                 Convert Image
               </Button>
             </CardContent>
           </Card>
 
-          {/* Converted Images List */}
           {convertedImages.length > 0 && (
             <Card>
               <CardHeader>
@@ -256,13 +252,14 @@ export function ConvertAndUploadModal({
                           alt={item.word}
                           className="w-10 h-10 rounded object-cover flex-shrink-0"
                         />
-                        <span className="font-medium truncate">{item.word}</span>
+                        <span className="font-medium truncate">
+                          {item.word}
+                        </span>
                       </div>
                       <Button
                         size="icon"
                         variant="ghost"
                         onClick={() => handleRemoveImage(index)}
-                        className="flex-shrink-0"
                       >
                         <Trash2 className="h-4 w-4 text-red-500" />
                       </Button>
@@ -275,17 +272,11 @@ export function ConvertAndUploadModal({
         </div>
 
         <DialogFooter className="flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleClose}
-            disabled={isUploading}
-          >
+          <Button variant="outline" onClick={handleClose} disabled={isUploading}>
             Close
           </Button>
 
           <Button
-            type="button"
             variant="outline"
             onClick={handleDownload}
             disabled={convertedImages.length === 0}
@@ -294,11 +285,12 @@ export function ConvertAndUploadModal({
           </Button>
 
           <Button
-            type="button"
             onClick={handleUpload}
             disabled={convertedImages.length === 0 || isUploading || !onUpload}
           >
-            {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isUploading && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
             Upload
           </Button>
         </DialogFooter>
